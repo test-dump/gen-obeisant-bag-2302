@@ -1,0 +1,72 @@
+Given the simplicity of this requirement, writing a test for console output might be overkill and could complicate the setup unnecessarily. However, if you insist on doing so, there are techniques to capture console output for assertion in the tests.
+
+Here we go:
+
+File: Program.cs
+```csharp
+using System;
+
+namespace HelloWorld
+{
+    class Program
+    {
+        public static void PrintMessage()
+        {
+            Console.WriteLine("Hello, World!");
+        }
+
+        static void Main(string[] args)
+        {
+            PrintMessage();
+        }
+    }
+}
+```
+
+Now, to test this application we're going to be capturing the console output and checking it against our expected output. 
+
+File: ProgramTests.cs
+```csharp
+using System;
+using System.IO;
+using HelloWorld;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace HelloWorldTest
+{
+    [TestClass]
+    public class ProgramTests
+    {
+        private StringWriter stringWriter;
+        private StringReader stringReader;
+
+        [TestInitialize]
+        public void SetUp()
+        {
+            stringWriter = new StringWriter();
+            Console.SetOut(stringWriter);
+
+            stringReader = new StringReader(stringWriter.ToString());
+            Console.SetIn(stringReader);
+        }
+
+        [TestCleanup]
+        public void TearDown()
+        {
+            stringWriter.Close();
+            stringReader.Close();
+        }
+
+        [TestMethod]
+        public void TestPrintMessage()
+        {
+            Program.PrintMessage();
+            string expected = string.Format("Hello, World!{0}", Environment.NewLine);
+            Assert.AreEqual(expected, stringWriter.ToString());
+        }
+    }
+}
+```
+This is the most optimal way to assert console output in the test. This test verifies that the method `PrintMessage` indeed writes "Hello, World!" to standard output. 
+
+Note: For running these tests you will need to add references to `Microsoft.VisualStudio.TestTools.UnitTesting` in your test project via NuGet package manager. Make sure to setup your project accordingly.
